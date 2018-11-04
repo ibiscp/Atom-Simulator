@@ -1,0 +1,81 @@
+<body></body>
+<!-- <script src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r58/three.min.js"></script> -->
+<script src="https://threejs.org/build/three.js"></script>
+<script>
+
+
+// *** scene and camera ***
+// Create a three.js scene
+var scene = new THREE.Scene();
+
+// Add a camera so that we can see our 3D objects.
+// By moving our camera's z positioning, we can increase or decrease zoom.
+var aspectRatio = window.innerWidth / window.innerHeight;
+var camera = new THREE.PerspectiveCamera(75, aspectRatio, 1, 10000);
+camera.position.z = 350;
+scene.add(camera);
+
+// *** objects ***
+// Nucleus
+var geo = new THREE.SphereGeometry(50, 20, 20);
+var mat = new THREE.MeshNormalMaterial();
+var nucleus = new THREE.Mesh(geo, mat);
+scene.add(nucleus);
+
+var electrons = [];
+numberElectrons = 20;
+var electron = null,
+  plane = new THREE.Plane(),
+  point = new THREE.Vector3();
+geo = new THREE.SphereBufferGeometry(5, 16, 16);
+mat = new THREE.MeshNormalMaterial({color:"red"});
+for(var i = 0; i < numberElectrons; ++i){
+  electron = new THREE.Mesh(geo, mat);
+  electrons.push(electron);
+  electron.angle = new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize();
+  electron.orbitSpeed = ((Math.random() * 0.05) + 0.02)*(Math.round(Math.random())*2-1);
+  plane.normal.copy(electron.angle);
+  point.set(Math.random(), Math.random(), Math.random());
+  plane.projectPoint(point, electron.position);
+  electron.position.setLength(Math.floor(50 + Math.random() * 50));
+  electron.position.applyAxisAngle(electron.angle, Math.random() / 10);
+  electron.position.add(nucleus.position);
+  scene.add(electron);
+}
+
+// *** renderer ***
+// A canvas renderer will generate the image, drawing our models on the screen.
+// var renderer = new THREE.CanvasRenderer();
+renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  alpha: true
+});
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+// This places the CanvasRenderer onto the body element in our HTML.
+document.body.appendChild(renderer.domElement);
+
+// *** animation ***
+function updateElectrons(){
+  var obj = null;
+  for(var i = 0; i < numberElectrons; ++i){
+      obj = electrons[i]
+      obj.position.sub(nucleus.position);
+      obj.position.applyAxisAngle(obj.angle, obj.orbitSpeed);
+      obj.position.add(nucleus.position);
+  }
+}
+
+// This function will handle animation of our atom
+function animate() {
+  requestAnimationFrame(animate);
+
+  // Display what the camera sees onto the browser screen.
+  renderer.render(scene, camera);
+
+  updateElectrons();
+}
+
+// Run the animation.
+animate();
+</script>
