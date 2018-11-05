@@ -1,5 +1,4 @@
 <body></body>
-<!-- <script src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r58/three.min.js"></script> -->
 <script src="https://threejs.org/build/three.js"></script>
 <script>
 
@@ -8,6 +7,8 @@
 // Create a three.js scene
 var scene = new THREE.Scene();
 
+var nucleusRadius = 50;
+
 // Add a camera so that we can see our 3D objects.
 // By moving our camera's z positioning, we can increase or decrease zoom.
 var aspectRatio = window.innerWidth / window.innerHeight;
@@ -15,12 +16,49 @@ var camera = new THREE.PerspectiveCamera(75, aspectRatio, 1, 10000);
 camera.position.z = 350;
 scene.add(camera);
 
+// Add lights
+var light = new THREE.AmbientLight( 0xffffff ); // soft white light
+scene.add( light );
+
+var light = new THREE.PointLight( 0xffffff, 1, 100 );
+light.position.set( 0, 0, 50 );
+scene.add( light );
+
+var light = new THREE.DirectionalLight( 0xffffff );
+light.position.set( 0, 0, 350 ).normalize();
+scene.add(light);
+
+var flashlight = new THREE.SpotLight(0xffffff,4,40);
+camera.add(flashlight);
+flashlight.position.set(0,0,100);
+flashlight.target = camera;
+
+
 // *** objects ***
 // Nucleus
-var geo = new THREE.SphereGeometry(50, 20, 20);
-var mat = new THREE.MeshNormalMaterial();
-var nucleus = new THREE.Mesh(geo, mat);
-scene.add(nucleus);
+var protons = []
+var numSpheres = 20;
+particleRadius = Math.pow(Math.pow(nucleusRadius, 3)/(2*numSpheres), 1/3);
+var geo = new THREE.SphereGeometry(particleRadius, 20, 20);
+
+for(var i = 0; i < numSpheres; i++) {
+    var sphereCenter = new THREE.Vector3(Math.random()*(Math.round(Math.random())*2-1),
+                                Math.random()*(Math.round(Math.random())*2-1),
+                                Math.random()*(Math.round(Math.random())*2-1)).multiplyScalar(nucleusRadius-particleRadius);
+
+    //Create a THREE.js sphere at sphereCenter
+    if (i%2 == 0)
+      var mat = new THREE.MeshPhongMaterial({color: 0x0000ff});
+    else
+      var mat = new THREE.MeshPhongMaterial({color: 0xff0000});
+
+
+    var nucleus = new THREE.Mesh(geo, mat);
+    nucleus.position.add(sphereCenter);
+    protons.push(nucleus);
+    scene.add(nucleus);
+}
+// ##################################################
 
 var electrons = [];
 numberElectrons = 20;
@@ -28,7 +66,7 @@ var electron = null,
   plane = new THREE.Plane(),
   point = new THREE.Vector3();
 geo = new THREE.SphereBufferGeometry(5, 16, 16);
-mat = new THREE.MeshNormalMaterial({color:"red"});
+mat = new THREE.MeshPhongMaterial({color: 0x808080});
 for(var i = 0; i < numberElectrons; ++i){
   electron = new THREE.Mesh(geo, mat);
   electrons.push(electron);
@@ -37,11 +75,12 @@ for(var i = 0; i < numberElectrons; ++i){
   plane.normal.copy(electron.angle);
   point.set(Math.random(), Math.random(), Math.random());
   plane.projectPoint(point, electron.position);
-  electron.position.setLength(Math.floor(50 + Math.random() * 50));
+  electron.position.setLength(Math.floor(nucleusRadius*1.5 + Math.random() * nucleusRadius));
   electron.position.applyAxisAngle(electron.angle, Math.random() / 10);
-  electron.position.add(nucleus.position);
   scene.add(electron);
 }
+
+// javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//rawgit.com/mrdoob/stats.js/master/build/stats.min.js';document.head.appendChild(script);})()
 
 // *** renderer ***
 // A canvas renderer will generate the image, drawing our models on the screen.
@@ -50,7 +89,9 @@ renderer = new THREE.WebGLRenderer({
   antialias: true,
   alpha: true
 });
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(window.innerWidth*.99, window.innerHeight*.97);
+// renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x808080, 1);
 
 // This places the CanvasRenderer onto the body element in our HTML.
 document.body.appendChild(renderer.domElement);
@@ -60,15 +101,34 @@ function updateElectrons(){
   var obj = null;
   for(var i = 0; i < numberElectrons; ++i){
       obj = electrons[i]
-      obj.position.sub(nucleus.position);
+      // obj.position.sub(nucleus.position);
       obj.position.applyAxisAngle(obj.angle, obj.orbitSpeed);
-      obj.position.add(nucleus.position);
+      // obj.position.add(nucleus.position);
   }
 }
 
 // This function will handle animation of our atom
 function animate() {
   requestAnimationFrame(animate);
+
+  for(var i = 0; i < protons.length; i++) {
+      for(var j = 0; j < protons.length; j++) {
+          if(i === j) continue;
+          //calculate the distance and direction between two nucleus items
+          var dist = protons[i].position.distanceTo(protons[j].position)
+          var direction = new THREE.Vector3().copy(protons[i].position).sub(protons[j].position).normalize();
+          // console.log(direction);
+          if(dist < 2 * particleRadius) {
+              console.log(dist);
+               // Update distance only position is inside nucleus
+               if (protons[i].position.distanceTo(new THREE.Vector3(0,0,0)) < nucleusRadius)
+                protons[i].position.add(direction.multiplyScalar(0.1));
+               if (protons[j].position.distanceTo(new THREE.Vector3(0,0,0)) < nucleusRadius)
+                protons[j].position.sub(direction.multiplyScalar(0.1))
+          }
+      }
+  }
+
 
   // Display what the camera sees onto the browser screen.
   renderer.render(scene, camera);
