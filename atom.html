@@ -1,7 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Atom Simulator</title>
+		<style>
+      body {
+				margin:0;
+				font-family: 'inconsolata';
+				font-size: 15px;
+				line-height: 18px;
+				overflow: hidden;
+			}
+    </style>
+	</head>
 <body></body>
 <script src="js/build/three.js"></script>
 <script src="js/build/three.min.js"></script>
 <script src="js/controls/OrbitControls.js"></script>
+<script src="js/libs/stats.min.js"></script>
 <script>
 
 // *** scene and camera ***
@@ -19,14 +35,15 @@ var randomWalkFactor = 1;
 
 // Add nucleus boundary
 var geo = new THREE.SphereGeometry(nucleusRadius*1.0, 100, 100);
-var mat = new THREE.MeshBasicMaterial({color: 0xffffff, opacity: 0.4, transparent: true });
+var mat = new THREE.MeshBasicMaterial({color: 0xffffff, opacity: 0.1, transparent: true });
 var nucleus = new THREE.Mesh(geo, mat);
 scene.add(nucleus);
 
 // Add the camera
 var aspectRatio = window.innerWidth / window.innerHeight;
-var camera = new THREE.PerspectiveCamera(75, aspectRatio, 1, 10000);
-camera.position.z = 250;
+// var camera = new THREE.PerspectiveCamera(75, aspectRatio, 1, 10000);
+var camera = new THREE.OrthographicCamera(-200*aspectRatio, 200*aspectRatio, 200, -200, 1, 10000);
+camera.position.z = 500;
 scene.add(camera);
 
 // Add lights
@@ -117,7 +134,10 @@ for(var i = 0; i < numberElectrons; ++i){
   scene.add(electron);
 }
 
-javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//rawgit.com/mrdoob/stats.js/master/build/stats.min.js';document.head.appendChild(script);})()
+
+var stats = new Stats();
+stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+document.body.appendChild( stats.dom );
 
 // *** renderer ***
 // A canvas renderer will generate the image, drawing our models on the screen.
@@ -126,9 +146,12 @@ renderer = new THREE.WebGLRenderer({
   antialias: true,
   alpha: true
 });
-renderer.setSize(window.innerWidth*.99, window.innerHeight*.97);
+renderer.setPixelRatio( window.devicePixelRatio );
+renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.setClearColor( 0x000000, 1 );
+// renderer.setSize(window.innerWidth*.99, window.innerHeight*.97);
 // renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x808080, 1);
+// renderer.setClearColor(0x808080, 1);
 
 // Add controls
 var controls;
@@ -199,6 +222,7 @@ function updateNucleus(){
 function animate() {
   requestAnimationFrame(animate);
 
+  stats.begin();
   // console.log(particleRadiusIncrement)
   // console.log((numProtons+numNeutrons)*Math.pow(particleRadius,3)/Math.pow(nucleusRadius,3))
   // if ((numProtons+numNeutrons)*Math.pow(particleRadius,3)/Math.pow(nucleusRadius,3) < 1)
@@ -209,6 +233,11 @@ function animate() {
   // controls.update();
 
   updateElectrons();
+
+
+  	// monitored code goes here
+
+  	stats.end();
 
   // Display what the camera sees onto the browser screen.
   renderer.render(scene, camera);
