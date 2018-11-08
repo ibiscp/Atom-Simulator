@@ -36,8 +36,12 @@ var randomWalkFactor = 0.1;
 var numProtons = 1;
 var numNeutrons = 3;
 var numElectrons = 20;
-var nucleusElements = []
+var nucleusElements = [];
 var electrons = [];
+var geo;
+var mat;
+var nucleus;
+var particlesGeo;
 
 // Add the camera
 var aspectRatio = window.innerWidth / window.innerHeight;
@@ -103,27 +107,26 @@ function drawNucleusParticle(color){
       scene.add(particle);
 }
 
-// Draw protons
-for(var i = 0; i < numProtons; i++) {
-  drawNucleusParticle(protonColor);
-}
-
-// Draw neutrons
-for(var i = 0; i < numNeutrons; i++) {
-  drawNucleusParticle(neutronColor);
-}
-
 // Draw the element with its protons, neutrons and electrons
 function drawElement(numProtons, numNeutrons, numElectrons){
   // Add nucleus boundary
-  var geo = new THREE.SphereGeometry(nucleusRadius*1.0, 100, 100);
-  var mat = new THREE.MeshBasicMaterial({color: 0xffffff, opacity: 0.1, transparent: true });
-  var nucleus = new THREE.Mesh(geo, mat);
+  geo = new THREE.SphereGeometry(nucleusRadius*1.0, 100, 100);
+  mat = new THREE.MeshBasicMaterial({color: 0xffffff, opacity: 0.1, transparent: true });
+  nucleus = new THREE.Mesh(geo, mat);
   scene.add(nucleus);
 
   // Nucleus elements
-  var particlesGeo = new THREE.SphereGeometry(1, 50, 50);
+  particlesGeo = new THREE.SphereGeometry(1, 50, 50);
   particlesGeo.dynamic = true;
+  // Draw protons
+  for(var i = 0; i < numProtons; i++) {
+    drawNucleusParticle(protonColor);
+  }
+
+  // Draw neutrons
+  for(var i = 0; i < numNeutrons; i++) {
+    drawNucleusParticle(neutronColor);
+  }
 
   // Add electrons
   var electron = null, plane = new THREE.Plane(), point = new THREE.Vector3();
@@ -142,6 +145,9 @@ function drawElement(numProtons, numNeutrons, numElectrons){
     scene.add(electron);
   }
 }
+
+// Draw element
+drawElement(numProtons, numNeutrons, numElectrons);
 
 // Update electrons
 function updateElectrons(){
@@ -180,7 +186,7 @@ function updateNucleus(){
         totalDeformation += deformation;
       }
   }
-  console.log(particleRadius)
+  // console.log(particleRadius)
   if (totalDeformation == 0){
     particleRadius += particleRadiusIncrement;
     particleRadiusIncrement *= 1.1;
