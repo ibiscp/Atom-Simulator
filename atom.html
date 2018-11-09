@@ -1,229 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<title>Atom Simulator</title>
-		<style>
-      body {
-				margin:0;
-				font-family: 'inconsolata';
-				font-size: 15px;
-				line-height: 18px;
-				overflow: hidden;
-			}
-    </style>
-	</head>
-<body></body>
-<script src="js/build/three.js"></script>
-<script src="js/build/three.min.js"></script>
-<script src="js/controls/OrbitControls.js"></script>
-<script src="js/libs/stats.min.js"></script>
-<script>
+<head>
+	<meta charset="utf-8">
+	<title>Atom Simulator</title>
+	<style>
+	body {
+		margin:0;
+		font-family: 'inconsolata';
+		font-size: 15px;
+		line-height: 18px;
+		overflow: hidden;
+	}
+	</style>
+</head>
+<body>
+	<canvas id="canvas">
+		</body>
 
-// Scene
-var scene = new THREE.Scene();
+		<script src="js/build/three.js"></script>
+		<script src="js/build/three.min.js"></script>
+		<script src="js/controls/OrbitControls.js"></script>
+		<script src="js/libs/stats.min.js"></script>
+		<script src="js/libs/dat.gui.min.js"></script>
 
-// Particles colors
-var protonColor = 0x0000ff;
-var neutronColor = 0xff0000;
-var electronColor = 0x808080;
-
-// Starting values
-var nucleusRadius = 50;
-var particleRadius = 1;//Math.pow(Math.pow(nucleusRadius, 3) * 0.01/(numProtons + numNeutrons), 1/3);
-var particleRadiusIncrement = 0.1;
-var randomWalkFactor = 0.1;
-var numProtons = 1;
-var numNeutrons = 3;
-var numElectrons = 20;
-var nucleusElements = [];
-var electrons = [];
-var geo;
-var mat;
-var nucleus;
-var particlesGeo;
-
-// Add the camera
-var aspectRatio = window.innerWidth / window.innerHeight;
-// var camera = new THREE.PerspectiveCamera(75, aspectRatio, 1, 10000);
-var camera = new THREE.OrthographicCamera(-200*aspectRatio, 200*aspectRatio, 200, -200, 1, 10000);
-camera.position.z = 500;
-scene.add(camera);
-
-// Add lights
-// Ambient light
-var ambientLight = new THREE.AmbientLight( 0xffffff ); // soft white light
-scene.add(ambientLight);
-
-// Camera Flash light
-var flashlight = new THREE.SpotLight(0xffffff, 1, 0);
-camera.add(flashlight);
-flashlight.position.set(0,0,100);
-flashlight.target = camera;
-
-// Status monitor
-var stats = new Stats();
-stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-document.body.appendChild( stats.dom );
-
-// Renderer
-renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
-renderer.setPixelRatio( window.devicePixelRatio );
-renderer.setSize( window.innerWidth, window.innerHeight );
-renderer.setClearColor( 0x000000, 1 );
-document.body.appendChild(renderer.domElement);
-
-// Add controls
-var controls;
-controls = new THREE.OrbitControls( camera );
-controls.addEventListener( 'change', renderer );
-
-// Random point generator inside a sphere
-function getPoint(radius) {
-    var u = Math.random();
-    var v = Math.random();
-    var theta = u * 2.0 * Math.PI;
-    var phi = Math.acos(2.0 * v - 1.0);
-    var r = Math.cbrt(Math.random())*radius;
-    var sinTheta = Math.sin(theta);
-    var cosTheta = Math.cos(theta);
-    var sinPhi = Math.sin(phi);
-    var cosPhi = Math.cos(phi);
-    var x = r * sinPhi * cosTheta;
-    var y = r * sinPhi * sinTheta;
-    var z = r * cosPhi;
-    var point = new THREE.Vector3(x, y, z)
-    return point;
-}
-
-// Draw each neutron particle
-function drawNucleusParticle(color){
-      var sphereCenter = getPoint(nucleusRadius - particleRadius);
-      var mat = new THREE.MeshPhongMaterial({color: color, shininess: 90});
-      var particle = new THREE.Mesh(particlesGeo, mat);
-      particle.scale.set(particleRadius, particleRadius, particleRadius);
-      particle.position.add(sphereCenter);
-      nucleusElements.push(particle);
-      scene.add(particle);
-}
-
-// Draw the element with its protons, neutrons and electrons
-function drawElement(numProtons, numNeutrons, numElectrons){
-  // Add nucleus boundary
-  geo = new THREE.SphereGeometry(nucleusRadius*1.0, 100, 100);
-  mat = new THREE.MeshBasicMaterial({color: 0xffffff, opacity: 0.1, transparent: true });
-  nucleus = new THREE.Mesh(geo, mat);
-  scene.add(nucleus);
-
-  // Nucleus elements
-  particlesGeo = new THREE.SphereGeometry(1, 50, 50);
-  particlesGeo.dynamic = true;
-  // Draw protons
-  for(var i = 0; i < numProtons; i++) {
-    drawNucleusParticle(protonColor);
-  }
-
-  // Draw neutrons
-  for(var i = 0; i < numNeutrons; i++) {
-    drawNucleusParticle(neutronColor);
-  }
-
-  // Add electrons
-  var electron = null, plane = new THREE.Plane(), point = new THREE.Vector3();
-  geo = new THREE.SphereBufferGeometry(5, 16, 16);
-  mat = new THREE.MeshPhongMaterial({color: electronColor});
-  for(var i = 0; i < numElectrons; ++i){
-    electron = new THREE.Mesh(geo, mat);
-    electrons.push(electron);
-    electron.angle = new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize();
-    electron.orbitSpeed = ((Math.random() * 0.05) + 0.02)*(Math.round(Math.random())*2-1);
-    plane.normal.copy(electron.angle);
-    point.set(Math.random(), Math.random(), Math.random());
-    plane.projectPoint(point, electron.position);
-    electron.position.setLength(Math.floor(nucleusRadius*1.5 + Math.random() * nucleusRadius));
-    electron.position.applyAxisAngle(electron.angle, Math.random() / 10);
-    scene.add(electron);
-  }
-}
-
-// Draw element
-drawElement(numProtons, numNeutrons, numElectrons);
-
-// Update electrons
-function updateElectrons(){
-  var obj = null;
-  for(var i = 0; i < numElectrons; ++i){
-      obj = electrons[i]
-      obj.position.applyAxisAngle(obj.angle, obj.orbitSpeed);
-  }
-}
-
-// Update nucleus
-function updateNucleus(){
-  var totalDeformation = 0;
-
-  for(var i = 0; i < nucleusElements.length; i++) {
-      // Do random walk
-      var randomWalk = getPoint(randomWalkFactor);
-      nucleusElements[i].position.add(randomWalk);
-
-      // Calculate deformation between spheres and rearrange
-      for(var j = 0; j < nucleusElements.length; j++) {
-          if(i === j) continue;
-          deformation = Math.max(1/2*(2*particleRadius-nucleusElements[i].position.distanceTo(nucleusElements[j].position)), 0);
-          repulsion = new THREE.Vector3().copy(nucleusElements[i].position).sub(nucleusElements[j].position).normalize().multiplyScalar(deformation);
-          if(deformation > 0) {
-                totalDeformation += deformation;
-                nucleusElements[i].position.add(repulsion);
-                nucleusElements[j].position.sub(repulsion);
-          }
-      }
-      // Calculate deformation on outer sphere and rearrange
-      var deformation = Math.max(nucleusElements[i].position.distanceTo(nucleus.position) - nucleusRadius + particleRadius, 0);
-      var repulsion = new THREE.Vector3().copy(nucleusElements[i].position).normalize().multiplyScalar(-deformation);
-      if (deformation > 0){
-        nucleusElements[i].position.add(repulsion);
-        totalDeformation += deformation;
-      }
-  }
-  // console.log(particleRadius)
-  if (totalDeformation == 0){
-    particleRadius += particleRadiusIncrement;
-    particleRadiusIncrement *= 1.1;
-    randomWalkFactor += 0.0001;
-  }
-  else{
-    particleRadius -= particleRadiusIncrement;
-    particleRadiusIncrement *= 0.9;
-    randomWalkFactor -= 0.0001;
-  }
-  for(var i = 0; i < nucleusElements.length; i++){
-    nucleusElements[i].scale.set(particleRadius, particleRadius, particleRadius);
-    particlesGeo.verticesNeedUpdate = true;
-  }
-  return totalDeformation;
-}
-
-// Animation function
-function animate() {
-  requestAnimationFrame(animate);
-
-  stats.begin();
-  // console.log(particleRadiusIncrement)
-  // console.log((numProtons+numNeutrons)*Math.pow(particleRadius,3)/Math.pow(nucleusRadius,3))
-  // if ((numProtons+numNeutrons)*Math.pow(particleRadius,3)/Math.pow(nucleusRadius,3) < 1)
-  if (particleRadius/nucleusRadius < 0.47)
-    updateNucleus();
-
-  // Update electrons
-  updateElectrons();
-
-  stats.end();
-
-  // Render
-  renderer.render(scene, camera);
-}
-
-// Run Animation
-animate();
-</script>
+		<script src="periodicTable.json"></script>
+		<script src="atom.js"></script>
+		<script src="gui.js"></script>
