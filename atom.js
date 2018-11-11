@@ -2,17 +2,17 @@ var options = {
   element: 0,
   pause: true,
   shells: true,
+  nucleusAnimation: true,
 };
 
 // Particles colors
-var protonColor = 0x0000ff;
-var neutronColor = 0xff0000;
-var electronColor = 0x808080;
+var protonColor = 0x0000FF;
+var neutronColor = 0xFF0000;
+var electronColor = [0x686868, 0x888888, 0xA9A9A9, 0xC8C8C8, 0xE0E0E0, 0xFFFFFF];
+var valenciaColor = 0xFFFF00;
 
 // Starting values
 var particleRadius;
-var particleRadiusIncrement;
-var randomWalkFactor;
 var nucleusRadius = 50;
 var numProtons;
 var numNeutrons;
@@ -24,6 +24,7 @@ var particlesGeo;
 var animationFrame;
 var buffer = cBuffer(50);
 var previousVolume;
+var def;
 
 var canvas, scene, camera, renderer, stats, flashlight, controls
 
@@ -71,6 +72,25 @@ function clearScene(obj){
   if(obj.texture) obj.texture.dispose();
 }
 
+// Generate nucleus
+function nucleusGeneration(){
+
+  while (def < 1){
+    var newDef = updateNucleus();
+    if (def == 0)
+      def = 0.1;
+    else
+      def = newDef;
+  }
+}
+
+// Reset nucleus animation
+function resetNucleus(){
+  // Variables
+  particleRadius = Math.pow(Math.pow(nucleusRadius, 3) * 0.01/(numProtons + numNeutrons), 1/3);
+  def = 0;
+}
+
 // Reset variables
 function reset(){
   // Clear Scene
@@ -81,11 +101,8 @@ function reset(){
   electrons = [];
   shells = [];
 
-  // Variables
-  particleRadius = Math.pow(Math.pow(nucleusRadius, 3) * 0.01/(numProtons + numNeutrons), 1/3);
-  particleRadiusIncrement = 0.1;
-  randomWalkFactor = 0.1;
-  previousVolume = 0;
+  // Reset nucleus animation
+  resetNucleus();
 
   // Add camera
   camera.add(flashlight);
@@ -126,9 +143,9 @@ function toggleShells(){
 }
 
 // Draw each neutron particle
-function drawNucleusParticle(color){
+function drawNucleusParticle(colorP){
   var sphereCenter = getPoint(nucleusRadius - particleRadius);
-  var mat = new THREE.MeshPhongMaterial({color: color, shininess: 90});
+  var mat = new THREE.MeshPhongMaterial({color: colorP, shininess: 90});
   var particle = new THREE.Mesh(particlesGeo, mat);
   particle.scale.set(particleRadius, particleRadius, particleRadius);
   particle.position.add(sphereCenter);
@@ -175,8 +192,13 @@ function drawElement(){
   // Add electrons
   var electron = null, plane = new THREE.Plane(), point = new THREE.Vector3();
   var electronGeo = new THREE.SphereBufferGeometry(5, 16, 16);
-  var electronMat = new THREE.MeshPhongMaterial({color: electronColor});
   for(var i = 0; i < numShells; ++i){
+    var colorE;
+    if (i == numShells - 1)
+      colorE = valenciaColor;
+    else
+      colorE = electronColor[i];
+    var electronMat = new THREE.MeshBasicMaterial({color: colorE});
     for (var j = 0; j < numElectrons[i]; ++j){
       electron = new THREE.Mesh(electronGeo, electronMat);
       electrons.push(electron);
@@ -209,64 +231,22 @@ function updateElectrons(){
 
 // Update nucleus
 function updateNucleus(){
-  var totalDeformation = 0;
+  var energy = 0;
+  var deformation, repulsion;
+  var counter = 1;
+  particleRadius += 0.05;//(nucleusRadius - particleRadius)*0.1
+
+  // Increase radius
+  for(var i = 0; i < nucleusElements.length; i++) {
+    nucleusElements[i].scale.set(particleRadius, particleRadius, particleRadius);
+    particlesGeo.verticesNeedUpdate = true;
+  }
 
   for(var i = 0; i < nucleusElements.length; i++) {
     // Do random walk
-    // var randomWalk = getPoint(0.2);
-    // nucleusElements[i].position.add(randomWalk);
+    var randomWalk = getPoint(0.2);
+    nucleusElements[i].position.add(randomWalk);
 
-    // Calculate deformation between spheres and rearrange
-    for(var j = 0; j < nucleusElements.length; j++) {
-      if(i === j) continue;
-      deformation = Math.max(1/2*(2*particleRadius-nucleusElements[i].position.distanceTo(nucleusElements[j].position)), 0);
-      repulsion = new THREE.Vector3().copy(nucleusElements[i].position).sub(nucleusElements[j].position).normalize().multiplyScalar(deformation);
-      if(deformation > 0) {
-        totalDeformation += 1//deformation;
-        nucleusElements[i].position.add(repulsion);
-        nucleusElements[j].position.sub(repulsion);
-      }
-    }
-    // Calculate deformation on outer sphere and rearrange
-    var deformation = Math.max(nucleusElements[i].position.distanceTo(shells[0].position) - nucleusRadius + particleRadius, 0);
-    var repulsion = new THREE.Vector3().copy(nucleusElements[i].position).normalize().multiplyScalar(-deformation);
-    if (deformation > 0){
-      nucleusElements[i].position.add(repulsion);
-      totalDeformation += 1//deformation;
-    }
-  }
-  // console.log(particleRadius)
-  // if (totalDeformation == 0){
-  particleRadius += 0.05//particleRadiusIncrement;
-  // particleRadiusIncrement *= 1.01;
-  randomWalkFactor += 0.1;
-  // }
-  // else{
-  //   // particleRadius -= particleRadiusIncrement;
-  //   particleRadiusIncrement *= 0.99;
-  //   randomWalkFactor -= 0.1;
-  // }
-  for(var i = 0; i < nucleusElements.length; i++){
-    nucleusElements[i].scale.set(particleRadius, particleRadius, particleRadius);
-    particlesGeo.verticesNeedUpdate = true;
-  }
-  // }}
-  return totalDeformation;
-}
-
-// Update nucleus
-function updateNucleus2(){
-  var energy = 0;
-  var deformation, repulsion;
-  particleRadius += (nucleusRadius - particleRadius)*0.1
-
-  for(var i = 0; i < nucleusElements.length; i++) {
-    // Increase radius
-    nucleusElements[i].scale.set(particleRadius, particleRadius, particleRadius);
-    particlesGeo.verticesNeedUpdate = true;
-  }
-
-  for(var i = 0; i < nucleusElements.length; i++) {
     // Calculate deformation energy between spheres
     for(var j = 0; j < nucleusElements.length; j++) {
       if(i === j) continue;
@@ -275,15 +255,19 @@ function updateNucleus2(){
       nucleusElements[i].position.add(repulsion);
       nucleusElements[j].position.sub(repulsion);
       energy += Math.pow(deformation, 2);
+      if (deformation > 0)
+        counter += 1;
     }
     // Calculate deformation on outer sphere
     deformation = Math.max(nucleusElements[i].position.distanceTo(shells[0].position) - nucleusRadius + particleRadius, 0);
     repulsion = new THREE.Vector3().copy(nucleusElements[i].position).normalize().multiplyScalar(-deformation);
     nucleusElements[i].position.add(repulsion);
-    // energy += Math.pow(deformation, 2);
+    energy += Math.pow(deformation, 2);
+    if (deformation > 0)
+      counter += 1;
   }
 
-  return energy/(nucleusElements.length);
+  return energy/counter;
 }
 
 // Animation function
@@ -307,21 +291,13 @@ function animate() {
 
       stats.begin();
 
-      var bufferAverage = buffer.average()
-      // console.log(previousVolume)
-      // console.log(bufferAverage - previousVolume)
-      // console.log(bufferAverage)
-      // console.log((numProtons+numNeutrons)^2)
-      // console.log(numProtons)
-      // console.log(numNeutrons)
-      if (bufferAverage < 1){//Math.pow(numProtons+numNeutrons,2)-(numProtons+numNeutrons)+1){
-
-        var def = updateNucleus2();
-        previousVolume = bufferAverage;
-        buffer.push(def);
-        // console.log(volume);
-
-        console.log(def)
+      // Update nucleus
+      if (def < 1){
+        var newDef = updateNucleus();
+        if (def == 0)
+          def = 0.1;
+        else
+          def = newDef;
       }
 
       // Update electrons
