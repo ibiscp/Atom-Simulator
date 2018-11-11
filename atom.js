@@ -22,7 +22,7 @@ var electrons = [];
 var shells = [];
 var particlesGeo;
 var animationFrame;
-var buffer = cBuffer(10);
+var buffer = cBuffer(50);
 var previousVolume;
 
 var canvas, scene, camera, renderer, stats, flashlight, controls
@@ -254,6 +254,38 @@ function updateNucleus(){
   return totalDeformation;
 }
 
+// Update nucleus
+function updateNucleus2(){
+  var energy = 0;
+  var deformation, repulsion;
+  particleRadius += (nucleusRadius - particleRadius)*0.1
+
+  for(var i = 0; i < nucleusElements.length; i++) {
+    // Increase radius
+    nucleusElements[i].scale.set(particleRadius, particleRadius, particleRadius);
+    particlesGeo.verticesNeedUpdate = true;
+  }
+
+  for(var i = 0; i < nucleusElements.length; i++) {
+    // Calculate deformation energy between spheres
+    for(var j = 0; j < nucleusElements.length; j++) {
+      if(i === j) continue;
+      deformation = Math.max(1/2*(2*particleRadius-nucleusElements[i].position.distanceTo(nucleusElements[j].position)), 0);
+      repulsion = new THREE.Vector3().copy(nucleusElements[i].position).sub(nucleusElements[j].position).normalize().multiplyScalar(deformation);
+      nucleusElements[i].position.add(repulsion);
+      nucleusElements[j].position.sub(repulsion);
+      energy += Math.pow(deformation, 2);
+    }
+    // Calculate deformation on outer sphere
+    deformation = Math.max(nucleusElements[i].position.distanceTo(shells[0].position) - nucleusRadius + particleRadius, 0);
+    repulsion = new THREE.Vector3().copy(nucleusElements[i].position).normalize().multiplyScalar(-deformation);
+    nucleusElements[i].position.add(repulsion);
+    // energy += Math.pow(deformation, 2);
+  }
+
+  return energy/(nucleusElements.length);
+}
+
 // Animation function
 var fps = 60;
 var now;
@@ -274,10 +306,7 @@ function animate() {
       controls.update();
 
       stats.begin();
-      // console.log(particleRadiusIncrement)
-      // console.log((numProtons+numNeutrons)*Math.pow(particleRadius,3)/Math.pow(nucleusRadius,3))
-      // if (particleRadius/nucleusRadius < 0.47)
-      // var volume = (numProtons+numNeutrons)*Math.pow(particleRadius,3)/Math.pow(nucleusRadius,3);
+
       var bufferAverage = buffer.average()
       // console.log(previousVolume)
       // console.log(bufferAverage - previousVolume)
@@ -286,9 +315,8 @@ function animate() {
       // console.log(numProtons)
       // console.log(numNeutrons)
       if (bufferAverage < 1){//Math.pow(numProtons+numNeutrons,2)-(numProtons+numNeutrons)+1){
-        // console.log(previousVolume - bufferAverage);
 
-        var def = updateNucleus();
+        var def = updateNucleus2();
         previousVolume = bufferAverage;
         buffer.push(def);
         // console.log(volume);
