@@ -1,5 +1,7 @@
 var options = {
   element: 0,
+  pause: true,
+  shells: true,
 };
 
 // Particles colors
@@ -18,13 +20,12 @@ var numElectrons;
 var nucleusElements = [];
 var electrons = [];
 var shells = [];
-var geo;
-var mat;
-var shell;
 var particlesGeo;
 var animationFrame;
+var buffer = cBuffer(10);
+var previousVolume;
 
-var canvas, scene, camera, renderer, stats
+var canvas, scene, camera, renderer, stats, flashlight, controls
 
 // Status monitor
 var stats = new Stats();
@@ -43,7 +44,11 @@ scene = new THREE.Scene();
 var aspectRatio = window.innerWidth / (window.innerHeight);
 camera = new THREE.OrthographicCamera(-200*aspectRatio, 200*aspectRatio, 200, -200, 1, 10000);
 camera.position.z = 500;
-scene.add(camera);
+// Camera Flash light
+flashlight = new THREE.SpotLight(0xffffff, 1, 0);
+flashlight.position.set(0,0,100);
+flashlight.target = camera;
+// camera.add(flashlight);
 
 // Renderer
 renderer = new THREE.WebGLRenderer({antialias: true, alpha: true, canvas: canvas});
@@ -53,9 +58,7 @@ renderer.setClearColor( 0x000000, 1 );
 document.body.appendChild(renderer.domElement);
 
 // Add controls
-var controls;
 controls = new THREE.OrbitControls( camera, renderer.domElement );
-// controls.addEventListener( 'change', renderer );
 
 // Clear scene
 function clearScene(obj){
@@ -66,9 +69,33 @@ function clearScene(obj){
   if(obj.geometry) obj.geometry.dispose();
   if(obj.material) obj.material.dispose();
   if(obj.texture) obj.texture.dispose();
+}
+
+// Reset variables
+function reset(){
+  // Clear Scene
+  clearScene(scene);
+
+  // Vectors
   nucleusElements = [];
   electrons = [];
   shells = [];
+
+  // Variables
+  particleRadius = Math.pow(Math.pow(nucleusRadius, 3) * 0.01/(numProtons + numNeutrons), 1/3);
+  particleRadiusIncrement = 0.1;
+  randomWalkFactor = 0.1;
+  previousVolume = 0;
+
+  // Add camera
+  camera.add(flashlight);
+  scene.add(camera);
+
+  // Ambient light
+  var ambientLight = new THREE.AmbientLight( 0xffffff ); // soft white light
+  scene.add(ambientLight);
+
+  buffer.clear();
 }
 
 // Random point generator inside a sphere
@@ -89,6 +116,15 @@ function getPoint(radius) {
   return point;
 }
 
+// Hide or show shells
+function toggleShells(){
+  console.log(options['shells'])
+  for(var i = 0; i <  numShells + 1; i++) {
+    shells[i].visible = options['shells'];
+  }
+  renderer.render(scene, camera);
+}
+
 // Draw each neutron particle
 function drawNucleusParticle(color){
   var sphereCenter = getPoint(nucleusRadius - particleRadius);
@@ -102,36 +138,23 @@ function drawNucleusParticle(color){
 
 // Draw the element with its protons, neutrons and electrons
 function drawElement(){
-
-  clearScene(scene)
-
-  // Add lights
-  // Ambient light
-  var ambientLight = new THREE.AmbientLight( 0xffffff ); // soft white light
-  scene.add(ambientLight);
-
-  // Camera Flash light
-  var flashlight = new THREE.SpotLight(0xffffff, 1, 0);
-  camera.add(flashlight);
-  flashlight.position.set(0,0,100);
-  flashlight.target = camera;
-
+  // Define number of elements
   numProtons = data.elements[options.element].number;
   numNeutrons = Math.round(data.elements[options.element].atomic_mass)
   - data.elements[options.element].number;
   numElectrons = data.elements[options.element].shells;
   numShells = data.elements[options.element].shells.length;
 
-  // Variables
-  particleRadius = Math.pow(Math.pow(nucleusRadius, 3) * 0.01/(numProtons + numNeutrons), 1/3);
-  particleRadiusIncrement = 0.1;
-  randomWalkFactor = 0.1;
+  // Reset simulator
+  reset();
 
   // Add shells
-  mat = new THREE.MeshBasicMaterial({color: 0xffffff, opacity: 0.05, transparent: true });
-  for(var i = 0; i <  numShells+ 1; i++) {
-    geo = new THREE.SphereGeometry(nucleusRadius + i * 20, 100, 100);
-    shell = new THREE.Mesh(geo, mat);
+  var shellMat = new THREE.MeshBasicMaterial({color: 0xffffff, opacity: 0.05, transparent: true });
+  var shellGeo, shell;
+  for(var i = 0; i <  numShells + 1; i++) {
+    shellGeo = new THREE.SphereGeometry(nucleusRadius + i * 20, 50, 50);
+    shell = new THREE.Mesh(shellGeo, shellMat);
+    shell.visible = options['shells'];
     scene.add(shell);
     shells.push(shell)
   }
@@ -151,14 +174,14 @@ function drawElement(){
 
   // Add electrons
   var electron = null, plane = new THREE.Plane(), point = new THREE.Vector3();
-  geo = new THREE.SphereBufferGeometry(5, 16, 16);
-  mat = new THREE.MeshPhongMaterial({color: electronColor});
+  var electronGeo = new THREE.SphereBufferGeometry(5, 16, 16);
+  var electronMat = new THREE.MeshPhongMaterial({color: electronColor});
   for(var i = 0; i < numShells; ++i){
     for (var j = 0; j < numElectrons[i]; ++j){
-      electron = new THREE.Mesh(geo, mat);
+      electron = new THREE.Mesh(electronGeo, electronMat);
       electrons.push(electron);
       electron.angle = new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize();
-      electron.orbitSpeed = 0.03;//((Math.random() * 0.05) + 0.02)*(Math.round(Math.random())*2-1);
+      electron.orbitSpeed = (0.05 - 0.005 * i)*(Math.round(Math.random())*2-1);
       plane.normal.copy(electron.angle);
       point.set(Math.random(), Math.random(), Math.random());
       plane.projectPoint(point, electron.position);
@@ -190,8 +213,8 @@ function updateNucleus(){
 
   for(var i = 0; i < nucleusElements.length; i++) {
     // Do random walk
-    var randomWalk = getPoint(randomWalkFactor);
-    nucleusElements[i].position.add(randomWalk);
+    // var randomWalk = getPoint(0.2);
+    // nucleusElements[i].position.add(randomWalk);
 
     // Calculate deformation between spheres and rearrange
     for(var j = 0; j < nucleusElements.length; j++) {
@@ -199,7 +222,7 @@ function updateNucleus(){
       deformation = Math.max(1/2*(2*particleRadius-nucleusElements[i].position.distanceTo(nucleusElements[j].position)), 0);
       repulsion = new THREE.Vector3().copy(nucleusElements[i].position).sub(nucleusElements[j].position).normalize().multiplyScalar(deformation);
       if(deformation > 0) {
-        totalDeformation += deformation;
+        totalDeformation += 1//deformation;
         nucleusElements[i].position.add(repulsion);
         nucleusElements[j].position.sub(repulsion);
       }
@@ -209,24 +232,25 @@ function updateNucleus(){
     var repulsion = new THREE.Vector3().copy(nucleusElements[i].position).normalize().multiplyScalar(-deformation);
     if (deformation > 0){
       nucleusElements[i].position.add(repulsion);
-      totalDeformation += deformation;
+      totalDeformation += 1//deformation;
     }
   }
   // console.log(particleRadius)
-  if (totalDeformation == 0){
-    particleRadius += particleRadiusIncrement;
-    particleRadiusIncrement *= 1.01;
-    randomWalkFactor += 0.0001;
-  }
-  else{
-    particleRadius -= particleRadiusIncrement;
-    particleRadiusIncrement *= 0.99;
-    randomWalkFactor -= 0.0001;
-  }
+  // if (totalDeformation == 0){
+  particleRadius += 0.05//particleRadiusIncrement;
+  // particleRadiusIncrement *= 1.01;
+  randomWalkFactor += 0.1;
+  // }
+  // else{
+  //   // particleRadius -= particleRadiusIncrement;
+  //   particleRadiusIncrement *= 0.99;
+  //   randomWalkFactor -= 0.1;
+  // }
   for(var i = 0; i < nucleusElements.length; i++){
     nucleusElements[i].scale.set(particleRadius, particleRadius, particleRadius);
     particlesGeo.verticesNeedUpdate = true;
   }
+  // }}
   return totalDeformation;
 }
 
@@ -237,32 +261,48 @@ var then = Date.now();
 var interval = 1000/fps;
 var delta;
 function animate() {
+  if (options['pause']){
+    animationFrame = requestAnimationFrame(animate);
 
+    now = Date.now();
+    delta = now - then;
 
-  animationFrame = requestAnimationFrame(animate);
+    if (delta > interval) {
+      then = now - (delta % interval);
 
-  now = Date.now();
-  delta = now - then;
+      // Update controls
+      controls.update();
 
-  if (delta > interval) {
-    then = now - (delta % interval);
+      stats.begin();
+      // console.log(particleRadiusIncrement)
+      // console.log((numProtons+numNeutrons)*Math.pow(particleRadius,3)/Math.pow(nucleusRadius,3))
+      // if (particleRadius/nucleusRadius < 0.47)
+      // var volume = (numProtons+numNeutrons)*Math.pow(particleRadius,3)/Math.pow(nucleusRadius,3);
+      var bufferAverage = buffer.average()
+      // console.log(previousVolume)
+      // console.log(bufferAverage - previousVolume)
+      // console.log(bufferAverage)
+      // console.log((numProtons+numNeutrons)^2)
+      // console.log(numProtons)
+      // console.log(numNeutrons)
+      if (bufferAverage < 1){//Math.pow(numProtons+numNeutrons,2)-(numProtons+numNeutrons)+1){
+        // console.log(previousVolume - bufferAverage);
 
-    // Update controls
-    controls.update();
+        var def = updateNucleus();
+        previousVolume = bufferAverage;
+        buffer.push(def);
+        // console.log(volume);
 
-    stats.begin();
-    // console.log(particleRadiusIncrement)
-    // console.log((numProtons+numNeutrons)*Math.pow(particleRadius,3)/Math.pow(nucleusRadius,3))
-    // if (particleRadius/nucleusRadius < 0.47)
-    if ((numProtons+numNeutrons)*Math.pow(particleRadius,3)/Math.pow(nucleusRadius,3) < 0.36)
-    updateNucleus();
+        console.log(def)
+      }
 
-    // Update electrons
-    updateElectrons();
+      // Update electrons
+      updateElectrons();
 
-    stats.end();
+      stats.end();
 
-    // Render
-    renderer.render(scene, camera);
+      // Render
+      renderer.render(scene, camera);
+    }
   }
 }
