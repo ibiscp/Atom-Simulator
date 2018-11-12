@@ -21,6 +21,17 @@
 	    padding:0 5px 0 5px;
 			width: 50%;
 	}
+.circle {
+  padding: 2px 9px;
+	width:25px;
+  height:25px;
+  border-radius:25px;
+	margin: 20;
+}
+.proton {background-color: #0000FF;}
+.neutron {background-color: #FF0000;}
+.electron {background-color: #C8C8C8;}
+.valencia {background-color: #FFFF00;}
 	</style>
 </head>
 <body>
@@ -34,6 +45,22 @@
 					<tr>
 						<td><div style="text-align:right">Group</div></td>
 						<td><div id="category" style="text-align:left; text-transform:capitalize">null</div></td>
+					</tr>
+					<tr>
+						<td><div style="text-align:right">Atomic number</div></td>
+						<td><div id="number" style="text-align:left">null</div></td>
+					</tr>
+					<tr>
+						<td><div style="text-align:right">Period</div></td>
+						<td><div id="period" style="text-align:left">null</div></td>
+					</tr>
+					<tr>
+						<td><div style="text-align:right">Group</div></td>
+						<td><div id="group" style="text-align:left">null</div></td>
+					</tr>
+					<tr>
+						<td><div style="text-align:right">Phase (STP)</div></td>
+						<td><div id="phase" style="text-align:left">null</div></td>
 					</tr>
 					<tr>
 						<td><div style="text-align:right">Atomic mass</div></td>
@@ -56,18 +83,6 @@
 						<td><div id="boil" style="text-align:left">null</div></td>
 					</tr>
 					<tr>
-						<td><div style="text-align:right">Atomic number</div></td>
-						<td><div id="number" style="text-align:left">null</div></td>
-					</tr>
-					<tr>
-						<td><div style="text-align:right">Period</div></td>
-						<td><div id="period" style="text-align:left">null</div></td>
-					</tr>
-					<tr>
-						<td><div style="text-align:right">Phase (STP)</div></td>
-						<td><div id="phase" style="text-align:left">null</div></td>
-					</tr>
-					<tr>
 						<td><div style="text-align:right">Discovered by</div></td>
 						<td><div id="discovered_by" style="text-align:left">null</div></td>
 					</tr>
@@ -75,6 +90,20 @@
 						<td><div style="text-align:right">Named by</div></td>
 						<td><div id="named_by" style="text-align:left">null</div></td>
 					</tr>
+					<tr>
+						<td><div style="text-align:right;">Protons&nbsp<span class="circle proton"></span></div></td>
+						<td><div id="protons" style="text-align:left">null</div></td>
+					</tr>
+					<td><div style="text-align:right;">Neutrons&nbsp<span class="circle neutron"></span></div></td>
+						<td><div id="neutrons" style="text-align:left">null</div></td>
+					</tr>
+					<td><div style="text-align:right;">Electrons&nbsp<span class="circle electron"></span></div></td>
+						<td><div id="electrons" style="text-align:left">null</div></td>
+					</tr>
+				</tr>
+				<td><div style="text-align:right;">Valencia electrons&nbsp<span class="circle valencia"></span></div></td>
+					<td><div id="valencia" style="text-align:left">null</div></td>
+				</tr>
 				</tbody>
 			</table>
 			<!-- <p><div>Spectral image</div></p>

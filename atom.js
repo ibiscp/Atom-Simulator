@@ -77,9 +77,9 @@ function nucleusGeneration(){
   while (def < 1){
     var newDef = updateNucleus();
     if (def == 0)
-      def = 0.1;
+    def = 0.1;
     else
-      def = newDef;
+    def = newDef;
   }
 }
 
@@ -130,6 +130,14 @@ function getPoint(radius) {
   return point;
 }
 
+// Check if the value to be shown is null
+function checkNull(value, unit){
+  if (value == null)
+  return "";
+  else
+  return value + " " + unit;
+}
+
 // Set element description
 function setDescription(){
   document.getElementById("symbol").textContent=data.elements[options.element].symbol;
@@ -137,18 +145,23 @@ function setDescription(){
   document.getElementById("summary").textContent=data.elements[options.element].summary;
   document.getElementById("category").innerHTML=data.elements[options.element].category;
   document.getElementById("atomic_mass").innerHTML=data.elements[options.element].atomic_mass;
-  document.getElementById("density").innerHTML=data.elements[options.element].density + " g/L";
-  document.getElementById("melt").innerHTML=data.elements[options.element].melt + " K";
-  document.getElementById("molar_heat").innerHTML=data.elements[options.element].molar_heat + " J/(mol·K)";
-  document.getElementById("boil").innerHTML=data.elements[options.element].boil + " K";
+  document.getElementById("density").innerHTML=checkNull(data.elements[options.element].density, "g/L");
+  document.getElementById("melt").innerHTML=checkNull(data.elements[options.element].melt, "K");
+  document.getElementById("molar_heat").innerHTML=checkNull(data.elements[options.element].molar_heat, "J/(mol·K)");
+  document.getElementById("boil").innerHTML=checkNull(data.elements[options.element].boil, "K");
   document.getElementById("number").innerHTML=data.elements[options.element].number;
   document.getElementById("period").innerHTML=data.elements[options.element].period;
+  document.getElementById("group").innerHTML=data.elements[options.element].xpos;
   document.getElementById("phase").innerHTML=data.elements[options.element].phase;
-  document.getElementById("discovered_by").innerHTML=data.elements[options.element].discovered_by;
-  document.getElementById("named_by").innerHTML=data.elements[options.element].named_by;
+  document.getElementById("discovered_by").innerHTML=checkNull(data.elements[options.element].discovered_by);
+  document.getElementById("named_by").innerHTML=checkNull(data.elements[options.element].named_by);
   document.getElementById("source").innerHTML=data.elements[options.element].source;
   document.getElementById("source").setAttribute('href', data.elements[options.element].source);
   // document.getElementById("spectral_img").setAttribute('src', data.elements[options.element].spectral_img);
+  document.getElementById("protons").innerHTML=numProtons;
+  document.getElementById("neutrons").innerHTML=numNeutrons;
+  document.getElementById("electrons").innerHTML=numElectrons.reduce(function(a, b) { return a + b; }, 0);
+  document.getElementById("valencia").innerHTML=numElectrons[numElectrons.length-1];
 }
 
 // Hide or show shells
@@ -216,9 +229,9 @@ function drawElement(){
   for(var i = 0; i < numShells; ++i){
     var colorE;
     if (i == numShells - 1)
-      colorE = valenciaColor;
+    colorE = valenciaColor;
     else
-      colorE = electronColor[i];
+    colorE = electronColor[i];
     var electronMat = new THREE.MeshBasicMaterial({color: colorE});
     for (var j = 0; j < numElectrons[i]; ++j){
       electron = new THREE.Mesh(electronGeo, electronMat);
@@ -277,7 +290,7 @@ function updateNucleus(){
       nucleusElements[j].position.sub(repulsion);
       energy += Math.pow(deformation, 2);
       if (deformation > 0)
-        counter += 1;
+      counter += 1;
     }
     // Calculate deformation on outer sphere
     deformation = Math.max(nucleusElements[i].position.distanceTo(shells[0].position) - nucleusRadius + particleRadius, 0);
@@ -285,7 +298,7 @@ function updateNucleus(){
     nucleusElements[i].position.add(repulsion);
     energy += Math.pow(deformation, 2);
     if (deformation > 0)
-      counter += 1;
+    counter += 1;
   }
 
   return energy/counter;
@@ -298,36 +311,40 @@ var then = Date.now();
 var interval = 1000/fps;
 var delta;
 function animate() {
-  if (options['pause']){
-    animationFrame = requestAnimationFrame(animate);
+  animationFrame = requestAnimationFrame(animate);
 
-    now = Date.now();
-    delta = now - then;
+  now = Date.now();
+  delta = now - then;
 
-    if (delta > interval) {
-      then = now - (delta % interval);
+  if (delta > interval) {
+    then = now - (delta % interval);
 
-      // Update controls
-      controls.update();
 
-      stats.begin();
 
+    // Update controls
+    controls.update();
+
+    // Start stats
+    stats.begin();
+
+    if (options['pause']){
       // Update nucleus
       if (def < 1){
         var newDef = updateNucleus();
         if (def == 0)
-          def = 0.1;
+        def = 0.1;
         else
-          def = newDef;
+        def = newDef;
       }
 
       // Update electrons
       updateElectrons();
-
-      stats.end();
-
-      // Render
-      renderer.render(scene, camera);
     }
+
+    // End stats
+    stats.end();
+
+    // Render
+    renderer.render(scene, camera);
   }
 }
