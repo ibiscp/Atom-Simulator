@@ -22,7 +22,6 @@ var electrons = [];
 var shells = [];
 var particlesGeo;
 var animationFrame;
-var buffer = cBuffer(50);
 var previousVolume;
 var def;
 
@@ -111,8 +110,6 @@ function reset(){
   // Ambient light
   var ambientLight = new THREE.AmbientLight( 0xffffff ); // soft white light
   scene.add(ambientLight);
-
-  buffer.clear();
 }
 
 // Random point generator inside a sphere
