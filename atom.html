@@ -11,19 +11,88 @@
 		line-height: 18px;
 		overflow: hidden;
 	}
+	.container_card * {
+		color: #ffffff;
+		text-align: center;
+		font-family:arial;
+		font-size:12px;
+	}
+	td{
+	    padding:0 5px 0 5px;
+			width: 50%;
+	}
 	</style>
 </head>
 <body>
-	<canvas id="canvas">
-		</body>
+	<div class="container_card" style="position:relative;">
+		<div id="card" style="position:absolute; width:335px !important; display:block; z-index:1; top:100vh; transform:translateY(-100%); right:0; margin: 15px;">
+			<h1><div id="symbol" style="font-size:30px;"><strong>symbol</strong></div></h1>
+			<p><div id="name" style="font-size:15px;">name</div></p>
+			<p><div id="summary">name</div></p>
+			<table id='table' align="center" style="width:335px">
+				<tbody>
+					<tr>
+						<td><div style="text-align:right">Group</div></td>
+						<td><div id="category" style="text-align:left; text-transform:capitalize">null</div></td>
+					</tr>
+					<tr>
+						<td><div style="text-align:right">Atomic mass</div></td>
+						<td><div id="atomic_mass" style="text-align:left">null</div></td>
+					</tr>
+					<tr>
+						<td><div style="text-align:right">Density (STP)</div></td>
+						<td><div id="density" style="text-align:left">null</div></td>
+					</tr>
+					<tr>
+						<td><div style="text-align:right">Melting Point</div></td>
+						<td><div id="melt" style="text-align:left">null</div></td>
+					</tr>
+					<tr>
+						<td><div style="text-align:right">Molar heat capacity</div></td>
+						<td><div id="molar_heat" style="text-align:left">null</div></td>
+					</tr>
+					<tr>
+						<td><div style="text-align:right">Boiling point</div></td>
+						<td><div id="boil" style="text-align:left">null</div></td>
+					</tr>
+					<tr>
+						<td><div style="text-align:right">Atomic number</div></td>
+						<td><div id="number" style="text-align:left">null</div></td>
+					</tr>
+					<tr>
+						<td><div style="text-align:right">Period</div></td>
+						<td><div id="period" style="text-align:left">null</div></td>
+					</tr>
+					<tr>
+						<td><div style="text-align:right">Phase (STP)</div></td>
+						<td><div id="phase" style="text-align:left">null</div></td>
+					</tr>
+					<tr>
+						<td><div style="text-align:right">Discovered by</div></td>
+						<td><div id="discovered_by" style="text-align:left">null</div></td>
+					</tr>
+					<tr>
+						<td><div style="text-align:right">Named by</div></td>
+						<td><div id="named_by" style="text-align:left">null</div></td>
+					</tr>
+				</tbody>
+			</table>
+			<!-- <p><div>Spectral image</div></p>
+			<img id="spectral_img" width="300" src="https://upload.wikimedia.org/wikipedia/commons/e/e4/Hydrogen_Spectra.jpg"> -->
+			<p><div><a id="source" href="source" target="_blank" rel="noopener">source</a></div></p>
+			<br>
+		</div>
+		<canvas id="canvas">
+		</div>
+	</body>
 
-		<script src="js/build/three.js"></script>
-		<script src="js/build/three.min.js"></script>
-		<script src="js/controls/OrbitControls.js"></script>
-		<script src="js/libs/stats.min.js"></script>
-		<script src="js/libs/dat.gui.min.js"></script>
+	<script src="js/build/three.js"></script>
+	<script src="js/build/three.min.js"></script>
+	<script src="js/controls/OrbitControls.js"></script>
+	<script src="js/libs/stats.min.js"></script>
+	<script src="js/libs/dat.gui.min.js"></script>
 
-		<script src="periodicTable.json"></script>
-		<script src="cBuffer.js"></script>
-		<script src="atom.js"></script>
-		<script src="gui.js"></script>
+	<script src="periodicTable.json"></script>
+	<script src="cBuffer.js"></script>
+	<script src="atom.js"></script>
+	<script src="gui.js"></script>

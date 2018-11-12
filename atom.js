@@ -133,6 +133,27 @@ function getPoint(radius) {
   return point;
 }
 
+// Set element description
+function setDescription(){
+  document.getElementById("symbol").textContent=data.elements[options.element].symbol;
+  document.getElementById("name").textContent=data.elements[options.element].name;
+  document.getElementById("summary").textContent=data.elements[options.element].summary;
+  document.getElementById("category").innerHTML=data.elements[options.element].category;
+  document.getElementById("atomic_mass").innerHTML=data.elements[options.element].atomic_mass;
+  document.getElementById("density").innerHTML=data.elements[options.element].density + " g/L";
+  document.getElementById("melt").innerHTML=data.elements[options.element].melt + " K";
+  document.getElementById("molar_heat").innerHTML=data.elements[options.element].molar_heat + " J/(mol·K)";
+  document.getElementById("boil").innerHTML=data.elements[options.element].boil + " K";
+  document.getElementById("number").innerHTML=data.elements[options.element].number;
+  document.getElementById("period").innerHTML=data.elements[options.element].period;
+  document.getElementById("phase").innerHTML=data.elements[options.element].phase;
+  document.getElementById("discovered_by").innerHTML=data.elements[options.element].discovered_by;
+  document.getElementById("named_by").innerHTML=data.elements[options.element].named_by;
+  document.getElementById("source").innerHTML=data.elements[options.element].source;
+  document.getElementById("source").setAttribute('href', data.elements[options.element].source);
+  // document.getElementById("spectral_img").setAttribute('src', data.elements[options.element].spectral_img);
+}
+
 // Hide or show shells
 function toggleShells(){
   console.log(options['shells'])
@@ -164,6 +185,9 @@ function drawElement(){
 
   // Reset simulator
   reset();
+
+  // Set element description
+  setDescription()
 
   // Add shells
   var shellMat = new THREE.MeshBasicMaterial({color: 0xffffff, opacity: 0.05, transparent: true });
