@@ -24,12 +24,19 @@ elementsList = sortOnKeys(elementsList);
 var pauseGUI;
 var shellsGUI;
 var nucleusGUI;
+var orbits;
 var functions = {
   Element:function(value){
     drawElement();
-    if (!options['nucleusAnimation'])
-      nucleusGeneration();
     renderer.render(scene, camera);
+    options.shellNucleus = true;
+    options.shell1 = true;
+    options.shell2 = true;
+    options.shell3 = true;
+    options.shell4 = true;
+    options.shell5 = true;
+    options.shell6 = true;
+    options.shell7 = true;
   },
   Pause:function(){
     if (options['pause']){
@@ -46,19 +53,20 @@ var functions = {
     if (options['shells']){
       options['shells'] = false;
       shellsGUI.name('Show shells');
-      toggleShells();
+      // toggleShells();
     }
     else{
       options['shells'] = true;
       shellsGUI.name('Hide shells');
-      toggleShells();
+      // toggleShells();
     }
+    setVisibility();
   },
   NucleusAnimation:function(){
     if (options['nucleusAnimation']){
       options['nucleusAnimation'] = false;
       nucleusGUI.name('Show nucleus animation');
-      nucleusGeneration();
+      nucleusGenerator();
     }
     else{
       options['nucleusAnimation'] = true;
@@ -66,14 +74,16 @@ var functions = {
       resetNucleus();
     }
   },
+  ShellVisibility:function(){
+    setVisibility();
+  }
 };
 
 // DAT.GUI Related Stuff
 var gui = new dat.GUI( { autoplace: false, width: 350 } );
 
 // List of elements
-var elementGUI = gui.add(options, "element", elementsList ).name('Element').listen();
-elementGUI.onChange(functions.Element);
+var elementGUI = gui.add(options, "element", elementsList ).name('Element').onChange(functions.Element);
 
 // Pause button
 pauseGUI = gui.add(functions,'Pause');
@@ -83,3 +93,17 @@ shellsGUI = gui.add(functions,'Shells').name('Hide shells');
 
 // Show nucleus animation
 nucleusGUI = gui.add(functions,'NucleusAnimation').name('Hide nucleus animation');
+
+orbits = gui.addFolder('Orbits');
+orbits.add(options, 'shellNucleus').name('Nucleus').onChange(functions.ShellVisibility).listen();
+orbits.add(options, 'shell1').name('1st shell').onChange(functions.ShellVisibility).listen();
+orbits.add(options, 'shell2').name('2nd shell').onChange(functions.ShellVisibility).listen();
+orbits.add(options, 'shell3').name('3rd shell').onChange(functions.ShellVisibility).listen();
+orbits.add(options, 'shell4').name('4th shell').onChange(functions.ShellVisibility).listen();
+orbits.add(options, 'shell5').name('5th shell').onChange(functions.ShellVisibility).listen();
+orbits.add(options, 'shell6').name('6th shell').onChange(functions.ShellVisibility).listen();
+orbits.add(options, 'shell7').name('7th shell').onChange(functions.ShellVisibility).listen();
+// orbits.add(options, 'shell7').name('7th shell').onChange(functions.ShellVisibility);
+orbits.open();
+
+console.log(orbits)

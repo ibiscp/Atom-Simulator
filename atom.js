@@ -3,6 +3,14 @@ var options = {
   pause: true,
   shells: true,
   nucleusAnimation: true,
+  shellNucleus: true,
+  shell1: true,
+  shell2: true,
+  shell3: true,
+  shell4: true,
+  shell5: true,
+  shell6: true,
+  shell7: true,
 };
 
 // Particles colors
@@ -17,9 +25,6 @@ var nucleusRadius = 50;
 var numProtons;
 var numNeutrons;
 var numElectrons;
-var nucleusElements = [];
-var electrons = [];
-var shells = [];
 var particlesGeo;
 var animationFrame;
 var def;
@@ -77,7 +82,7 @@ function clearScene(obj){
 }
 
 // Generate nucleus
-function nucleusGeneration(){
+function nucleusGenerator(){
 
   while (def < 1){
     var newDef = updateNucleus();
@@ -85,6 +90,28 @@ function nucleusGeneration(){
     def = 0.1;
     else
     def = newDef;
+  }
+}
+
+//
+function setVisibility(){
+  var electronCount = 0;
+  var shellOptions = [options.shellNucleus, options.shell1, options.shell2, options.shell3,
+                      options.shell4, options.shell5, options.shell6, options.shell7];
+
+  // Nucleus
+  figure[shellsId].object_list[0].visible = shellOptions[0] && options.shells;
+  for(var i = 0; i < numProtons+numNeutrons; i++)
+    figure[nucleusElementsId].object_list[i].visible = shellOptions[0];
+
+  // For every shell
+  for(var j = 0; j < numElectrons.length; j++){
+    figure[shellsId].object_list[j+1].visible = shellOptions[j+1] && options.shells;
+    var temp = electronCount;
+    for(var i = temp; i < temp + numElectrons[j]; i++){
+      figure[electronsId].object_list[i].visible = shellOptions[j+1];
+      electronCount += 1;
+    }
   }
 }
 
@@ -109,10 +136,8 @@ function reset(){
   // Clear Scene
   clearScene(scene);
 
-  // Vectors
-  nucleusElements = [];
-  electrons = [];
-  shells = [];
+  // Figure vector
+  figure = [];
 
   // Reset nucleus animation
   resetNucleus();
@@ -180,9 +205,8 @@ function setDescription(){
 
 // Hide or show shells
 function toggleShells(){
-  console.log(options['shells'])
   for(var i = 0; i <  numShells + 1; i++) {
-    shells[i].visible = options['shells'];
+    figure[shellsId].object_list[i].visible = options['shells'];
   }
   renderer.render(scene, camera);
 }
@@ -194,8 +218,8 @@ function drawNucleusParticle(colorP){
   var particle = new THREE.Mesh(particlesGeo, mat);
   particle.scale.set(particleRadius, particleRadius, particleRadius);
   particle.position.add(sphereCenter);
-  nucleusElements.push(particle);
   scene.add(particle);
+  return particle;
 }
 
 // Draw the element with its protons, neutrons and electrons
@@ -217,7 +241,8 @@ function drawElement(){
   for( var i=0; i<3; i++) figure[i] = createNode(null, null);
 
   // Add shells
-  var shellMat = new THREE.MeshBasicMaterial({color: 0xffffff, opacity: 0.05, transparent: true });
+  var shells = [];
+  var shellMat = new THREE.MeshBasicMaterial({color: 0xffffff, opacity: 0.03, transparent: true});
   var shellGeo, shell;
   for(var i = 0; i <  numShells + 1; i++) {
     if (i == 0)
@@ -229,23 +254,23 @@ function drawElement(){
     scene.add(shell);
     shells.push(shell)
   }
-  figure[shellsId] = createNode( shell, null );
+  figure[shellsId] = createNode( shells, null );
 
   // Nucleus elements
+  var nucleusElements = [];
   particlesGeo = new THREE.SphereGeometry(1, 20, 20);
   particlesGeo.dynamic = true;
   // Draw protons
-  for(var i = 0; i < numProtons; i++) {
-    drawNucleusParticle(protonColor);
-  }
+  for(var i = 0; i < numProtons; i++)
+    nucleusElements.push(drawNucleusParticle(protonColor));
 
   // Draw neutrons
-  for(var i = 0; i < numNeutrons; i++) {
-    drawNucleusParticle(neutronColor);
-  }
+  for(var i = 0; i < numNeutrons; i++)
+    nucleusElements.push(drawNucleusParticle(neutronColor));
   figure[nucleusElementsId] = createNode( nucleusElements, shellsId );
 
   // Add electrons
+  var electrons = [];
   var electron = null, plane = new THREE.Plane(), point = new THREE.Vector3();
   var electronGeo = new THREE.SphereBufferGeometry(5, 16, 16);
   for(var i = 0; i < numShells; ++i){
@@ -270,6 +295,10 @@ function drawElement(){
   }
   figure[electronsId] = createNode( electrons, shellsId );
 
+  // Generate nucleus without animation
+  if (!options['nucleusAnimation'])
+    nucleusGenerator();
+
   // Run Animation
   animate();
 }
@@ -280,8 +309,8 @@ drawElement();
 // Update electrons
 function updateElectrons(){
   var obj = null;
-  for(var i = 0; i < electrons.length; ++i){
-    obj = electrons[i]
+  for(var i = 0; i < figure[electronsId].object_list.length; ++i){
+    obj = figure[electronsId].object_list[i]
     obj.position.applyAxisAngle(obj.angle, obj.orbitSpeed);
   }
 }
@@ -294,31 +323,32 @@ function updateNucleus(){
   particleRadius += 0.05;//(nucleusRadius - particleRadius)*0.1
 
   // Increase radius
-  for(var i = 0; i < nucleusElements.length; i++) {
-    nucleusElements[i].scale.set(particleRadius, particleRadius, particleRadius);
+  for(var i = 0; i < figure[nucleusElementsId].object_list.length; i++) {
+    figure[nucleusElementsId].object_list[i].scale.set(particleRadius, particleRadius, particleRadius);
     particlesGeo.verticesNeedUpdate = true;
   }
 
-  for(var i = 0; i < nucleusElements.length; i++) {
+  for(var i = 0; i < figure[nucleusElementsId].object_list.length; i++) {
     // Do random walk
     var randomWalk = getPoint(0.2);
-    nucleusElements[i].position.add(randomWalk);
+    figure[nucleusElementsId].object_list[i].position.add(randomWalk);
 
     // Calculate deformation energy between spheres
-    for(var j = 0; j < nucleusElements.length; j++) {
+    for(var j = 0; j < figure[nucleusElementsId].object_list.length; j++) {
       if(i === j) continue;
-      deformation = Math.max(1/2*(2*particleRadius-nucleusElements[i].position.distanceTo(nucleusElements[j].position)), 0);
-      repulsion = new THREE.Vector3().copy(nucleusElements[i].position).sub(nucleusElements[j].position).normalize().multiplyScalar(deformation);
-      nucleusElements[i].position.add(repulsion);
-      nucleusElements[j].position.sub(repulsion);
+      deformation = Math.max(1/2*(2*particleRadius-figure[nucleusElementsId].object_list[i].position.distanceTo(figure[nucleusElementsId].object_list[j].position)), 0);
+      repulsion = new THREE.Vector3().copy(figure[nucleusElementsId].object_list[i].position).sub(figure[nucleusElementsId].object_list[j].position).normalize().multiplyScalar(deformation);
+      figure[nucleusElementsId].object_list[i].position.add(repulsion);
+      figure[nucleusElementsId].object_list[j].position.sub(repulsion);
       energy += Math.pow(deformation, 2);
       if (deformation > 0)
       counter += 1;
     }
+
     // Calculate deformation on outer sphere
-    deformation = Math.max(nucleusElements[i].position.distanceTo(shells[0].position) - nucleusRadius + particleRadius, 0);
-    repulsion = new THREE.Vector3().copy(nucleusElements[i].position).normalize().multiplyScalar(-deformation);
-    nucleusElements[i].position.add(repulsion);
+    deformation = Math.max(figure[nucleusElementsId].object_list[i].position.distanceTo(figure[shellsId].object_list[0].position) - nucleusRadius + particleRadius, 0);
+    repulsion = new THREE.Vector3().copy(figure[nucleusElementsId].object_list[i].position).normalize().multiplyScalar(-deformation);
+    figure[nucleusElementsId].object_list[i].position.add(repulsion);
     energy += Math.pow(deformation, 2);
     if (deformation > 0)
     counter += 1;
@@ -341,8 +371,6 @@ function animate() {
 
   if (delta > interval) {
     then = now - (delta % interval);
-
-
 
     // Update controls
     controls.update();
