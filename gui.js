@@ -2,6 +2,23 @@ var elementsList = {}
 for(var i = 0; i < data.elements.length; ++i){
   elementsList[data.elements[i].name] = i;
 }
+function sortOnKeys(dict) {
+
+    var sorted = [];
+    for(var key in dict) {
+        sorted[sorted.length] = key;
+    }
+    sorted.sort();
+
+    var tempDict = {};
+    for(var i = 0; i < sorted.length; i++) {
+        tempDict[sorted[i]] = dict[sorted[i]];
+    }
+
+    return tempDict;
+}
+
+elementsList = sortOnKeys(elementsList);
 
 // Buttons and functions
 var pauseGUI;
