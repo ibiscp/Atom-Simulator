@@ -22,10 +22,15 @@ var electrons = [];
 var shells = [];
 var particlesGeo;
 var animationFrame;
-var previousVolume;
 var def;
 
-var canvas, scene, camera, renderer, stats, flashlight, controls
+// Hierarchical model
+var figure = [];
+var shellsId = 0;
+var nucleusElementsId = 1;
+var electronsId = 2;
+
+var canvas, scene, camera, renderer, stats, flashlight, controls;
 
 // Status monitor
 var stats = new Stats();
@@ -63,7 +68,7 @@ controls = new THREE.OrbitControls( camera, renderer.domElement );
 // Clear scene
 function clearScene(obj){
   while(obj.children.length > 0){
-    clearScene(obj.children[0])
+    clearScene(obj.children[0]);
     obj.remove(obj.children[0]);
   }
   if(obj.geometry) obj.geometry.dispose();
@@ -88,6 +93,15 @@ function resetNucleus(){
   // Variables
   particleRadius = Math.pow(Math.pow(nucleusRadius, 3) * 0.01/(numProtons + numNeutrons), 1/3);
   def = 0;
+}
+
+// Node for hierarchical model
+function createNode(object_list, parent){
+  var node = {
+    object_list: object_list,
+    parent: parent,
+  }
+  return node;
 }
 
 // Reset variables
@@ -199,16 +213,23 @@ function drawElement(){
   // Set element description
   setDescription()
 
+  // Create empty nodes for hierarchical model
+  for( var i=0; i<3; i++) figure[i] = createNode(null, null);
+
   // Add shells
   var shellMat = new THREE.MeshBasicMaterial({color: 0xffffff, opacity: 0.05, transparent: true });
   var shellGeo, shell;
   for(var i = 0; i <  numShells + 1; i++) {
-    shellGeo = new THREE.SphereGeometry(nucleusRadius + i * 20, 50, 50);
+    if (i == 0)
+      shellGeo = new THREE.SphereGeometry(nucleusRadius, 50, 50);
+    else
+      shellGeo = new THREE.SphereGeometry(nucleusRadius + i * 20 + 20, 50, 50);
     shell = new THREE.Mesh(shellGeo, shellMat);
     shell.visible = options['shells'];
     scene.add(shell);
     shells.push(shell)
   }
+  figure[shellsId] = createNode( shell, null );
 
   // Nucleus elements
   particlesGeo = new THREE.SphereGeometry(1, 20, 20);
@@ -222,6 +243,7 @@ function drawElement(){
   for(var i = 0; i < numNeutrons; i++) {
     drawNucleusParticle(neutronColor);
   }
+  figure[nucleusElementsId] = createNode( nucleusElements, shellsId );
 
   // Add electrons
   var electron = null, plane = new THREE.Plane(), point = new THREE.Vector3();
@@ -235,17 +257,18 @@ function drawElement(){
     var electronMat = new THREE.MeshBasicMaterial({color: colorE});
     for (var j = 0; j < numElectrons[i]; ++j){
       electron = new THREE.Mesh(electronGeo, electronMat);
-      electrons.push(electron);
       electron.angle = new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize();
       electron.orbitSpeed = (0.05 - 0.005 * i)*(Math.round(Math.random())*2-1);
       plane.normal.copy(electron.angle);
       point.set(Math.random(), Math.random(), Math.random());
       plane.projectPoint(point, electron.position);
-      electron.position.setLength(nucleusRadius + 20 * (i+1));
+      electron.position.setLength(nucleusRadius + 20 + 20 * (i+1));
       electron.position.applyAxisAngle(electron.angle, Math.random() / 10);
       scene.add(electron);
+      electrons.push(electron);
     }
   }
+  figure[electronsId] = createNode( electrons, shellsId );
 
   // Run Animation
   animate();
