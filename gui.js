@@ -105,5 +105,3 @@ orbits.add(options, 'shell6').name('6th shell').onChange(functions.ShellVisibili
 orbits.add(options, 'shell7').name('7th shell').onChange(functions.ShellVisibility).listen();
 // orbits.add(options, 'shell7').name('7th shell').onChange(functions.ShellVisibility);
 orbits.open();
-
-console.log(orbits)
