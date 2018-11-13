@@ -7,6 +7,6 @@ This project was developed using three.js, which is a cross-browser JavaScript l
 The source code of this project can be found on [GitHub](https://github.com/ibiscp/Atom-Simulator) and it can be tested in [this link](https://ibiscp.000webhostapp.com/atom.html). 
 
 <p align="center">
-<img src="report/images/screenshot.png" width="300"/><br>
+<img src="report/images/screenshot.png" width="600"/><br>
 <i>Simulator screenshot</i>
 </p>
